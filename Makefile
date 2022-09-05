@@ -28,7 +28,7 @@ release : $(objects)
 	$(CC) $(CFLAGS) $(RELEASE) -o $@ $^ $(libs)
 
 bin/%.o : src/%.cpp include/%.hpp
-	$(CC) $(CFLAGS) $(RELEASE) -c $<
+	$(CC) $(CFLAGS) $(RELEASE) -c -o $@ $<
 
 %_d : test/%_test.cpp $(objs:.o=_d.o)
 	$(CC) $(CFLAGS) $(DEBUG) -o $@ $^ $(libs)
