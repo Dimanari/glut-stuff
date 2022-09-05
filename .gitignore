@@ -1,0 +1,17 @@
+# ignore all files
+*
+# don't ignore folders cause you need to lookup subdirectories
+!*/
+# the only file type in here currently
+!*.md
+# add .gitignore cause other people will try to copy your source and might mess thinds up
+!*.gitignore
+# !.myfuncs
+!*.c
+!*.h
+!*.cpp
+!*.hpp
+!*Makefile
+!*.vs
+!*.fs
+!*.glsl
