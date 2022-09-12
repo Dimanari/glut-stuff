@@ -172,7 +172,7 @@ vector<dimanari::Vertex> MakeFrom(Face **face, unsigned int per_array = 2, unsig
 }
 vector<dimanari::Vertex> MakeCube()
 {
-	Face *faces[6];
+	Face **faces = new Face*[6];
 	for(int i=0;i<6;i++)
 	{
 		faces[i] = GenFace(i);
@@ -181,8 +181,9 @@ vector<dimanari::Vertex> MakeCube()
 	vector<dimanari::Vertex> vect = MakeFrom(faces);
 	for(int i=0;i<6;i++)
 	{
-		delete faces[i];
+		delete[] faces[i];
 	}
+	delete []faces;
 	return vect;
 }
 

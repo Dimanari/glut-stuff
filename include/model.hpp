@@ -18,22 +18,6 @@ struct Texture_ {
     string type;
 };
 
-class Mesh {
-    public:
-        // mesh data
-        vector<Vertex>       vertices;
-        vector<unsigned int> indices;
-        vector<Texture_>      textures;
-
-        Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture_> textures);
-        void Draw(Shader &shader);
-    private:
-        //  render data
-        unsigned int VAO, VBO, EBO;
-
-        void setupMesh();
-};  
-
 class SimpleMesh
 {
     public:

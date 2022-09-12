@@ -114,6 +114,74 @@ void Texture::VerifyBMP(unsigned char *header, FILE* file)
 Texture::Texture() : m_h(0), m_w(0), m_texture(0)
 {}
 
+
+void Texture::SetTexture(int texture)
+{
+	if(0 != m_texture)
+	{
+		throw;
+	}
+	m_texture = texture;
+}
+void Texture::SetDimensions(unsigned int w_,unsigned int h_)
+{
+	if(0 != m_texture)
+	{
+		throw;
+	}
+	m_w = w_;
+	m_h = h_;
+}
+
+
+int ShadowTexture::MakeTexture(unsigned int w_,unsigned int h_)
+{
+	if(0 != Data())
+		return -1;
+	SetDimensions(w_, h_);
+	GLuint renderedTexture;
+	glGenTextures(1, &renderedTexture);
+	SetTexture(renderedTexture);
+	Activate(GL_TEXTURE0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w_, h_, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	GLenum success = glGetError();
+	if(GL_NO_ERROR != success)
+	{
+		switch(success)
+		{
+		case GL_INVALID_ENUM:
+			throw std::runtime_error("glTexImage2D GL_INVALID_ENUM");
+			break;
+		case GL_INVALID_VALUE:
+			throw std::runtime_error("glTexImage2D GL_INVALID_VALUE");
+			break;
+		case GL_INVALID_OPERATION:
+			throw std::runtime_error("glTexImage2D GL_INVALID_OPERATION");
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			throw std::runtime_error("glTexImage2D GL_INVALID_FRAMEBUFFER_OPERATION");
+			break;
+		case GL_OUT_OF_MEMORY:
+			throw std::runtime_error("glTexImage2D GL_OUT_OF_MEMORY");
+			break;
+		case GL_STACK_UNDERFLOW:
+			throw std::runtime_error("glTexImage2D GL_STACK_UNDERFLOW");
+			break;
+		case GL_STACK_OVERFLOW:
+			throw std::runtime_error("glTexImage2D GL_STACK_OVERFLOW");
+			break;
+		default:
+			throw std::runtime_error("glTexImage2D " + std::to_string(success));
+			break;
+		}
+	}
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	return 0;
+}
+
 }
 #ifndef __STDC_LIB_EXT1__
 int memcpy_s(void *dest, size_t destsz, const void *src, size_t count )

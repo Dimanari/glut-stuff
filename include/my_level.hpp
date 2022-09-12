@@ -14,7 +14,6 @@ using dimanari::Shader;
 using dimanari::ShaderVBO;
 using dimanari::Texture;
 using dimanari::SimpleMesh;
-using dimanari::DepthMap;
 using dimanari::ShadowTexture;
 
 struct Point3D

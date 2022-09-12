@@ -13,8 +13,11 @@ public:
 	inline unsigned int Width();
 	inline unsigned int Height();
 	inline void Activate(GLenum texture_num);
+	inline static void Unbind();
 protected:
 	Texture();
+	void SetTexture(int texture);
+	void SetDimensions(unsigned int w_,unsigned int h_);
 private:
 	void VerifyBMP(unsigned char *header, FILE* file);
 	Texture(const Texture& other) = delete;
@@ -30,7 +33,8 @@ class ShadowTexture : public Texture
 {
 	public:
 	ShadowTexture() {}
-friend class DepthMap;
+	int MakeTexture(unsigned int w_,unsigned int h_);
+	friend class DepthMap;
 };
 
 inline unsigned int Texture::Data()
@@ -54,6 +58,12 @@ inline void Texture::Activate(GLenum texture_num)
 {
 	glActiveTexture(texture_num);
 	glBindTexture(GL_TEXTURE_2D, m_texture);
+}
+
+
+inline void Texture::Unbind()
+{
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 }
 #endif //!DIMA_PROJ_TEXTURE_HPP

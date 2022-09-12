@@ -68,7 +68,7 @@ void Controller::Tick()
 
 void Controller::Stop()
 {
-	glutExit();
+	glutLeaveMainLoop();
 }
 
 void Controller::ToggleFS()
@@ -103,4 +103,14 @@ void Controller::StartUp(int argc, char *argv[], const char *name, unsigned int 
 	gettimeofday(&time_now, nullptr);
 	last_time = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
 }
+void Controller::Cleanup()
+{
+	//Release();
+}
+
+void Controller::HideCursor()
+{
+	glutSetCursor(GLUT_CURSOR_NONE);
+}
+
 }
