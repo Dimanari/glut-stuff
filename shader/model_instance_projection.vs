@@ -20,6 +20,6 @@ void main()
 
     TexCoord = aTexCoords;
 
-    FragPos = vec3(aInstanceMatrix * vec4(aPos, 1.0));
+    FragPos = vec3(aInstanceMatrix * vec4(aPos, 0.0));
     Normal = mat3(transpose(inverse(aInstanceMatrix))) * aNorm;
 }

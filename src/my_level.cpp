@@ -1,10 +1,12 @@
 #include <cmath>
 #include <sys/time.h>
+#include <stdexcept>
+#include <iostream>
 #include "my_level.hpp"
 
 namespace dimanari_user
 {
-glm::mat4 m_vec[3] = {glm::identity<glm::mat4>()};
+glm::mat4 m_vec[4] = {glm::identity<glm::mat4>()};
 
 dimanari::Texture_ to_struct(Texture& t, string name = "ma_texture")
 {
@@ -172,7 +174,7 @@ vector<dimanari::Vertex> MakeFrom(Face **face, unsigned int per_array = 2, unsig
 }
 vector<dimanari::Vertex> MakeCube()
 {
-	Face *faces[6];
+	Face **faces = new Face*[6];
 	for(int i=0;i<6;i++)
 	{
 		faces[i] = GenFace(i);
@@ -181,17 +183,22 @@ vector<dimanari::Vertex> MakeCube()
 	vector<dimanari::Vertex> vect = MakeFrom(faces);
 	for(int i=0;i<6;i++)
 	{
-		delete faces[i];
+		delete[] faces[i];
 	}
+	delete []faces;
 	return vect;
 }
 
 MyLevel::MyLevel() : wall("resources/wall.bmp"),
-	cube_shader("shader/model_instance.vs", "shader/textured_lighting.fs"),
+	show_me("shader/colored_texture.vs","shader/textured.fs"),
+	cube_shader("shader/model_instance.vs", "shader/textured_lighting_cube.fs"),
+	cube_shader_to_texture("shader/model_instance.vs", "shader/depth.fs"),
 	cube(MakeCube(), to_struct(wall)),
+	m_surface(1000, 1000),
 	use_mouse(false), tick_num(0), angle(0.0)
 {
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_CUBE_MAP);
 	yaw = 90.0f;
 	pitch = 0.0f;
 	cameraPos = glm::vec3(0.0f, 0.0f, -3.0f);
@@ -210,6 +217,10 @@ MyLevel::MyLevel() : wall("resources/wall.bmp"),
 		m_vec[i] = glm::translate(glm::mat4(1), glm::vec3(0.0,0.0,3.0));
 		m_vec[i] = glm::rotate(glm::mat4(1), (float)(i * M_PI_2 * 3.0f), glm::vec3(0.0f,1.0f,0.0f) ) * m_vec[i];
 	}
+	m_vec[3] = glm::translate(glm::mat4(1), glm::vec3(0.0,-2.0,0.0));
+	m_vec[3] = glm::scale(m_vec[3], glm::vec3(100.0f,1.0f,100.0f) );
+	lightPos = glm::vec3(8.0,4.0, 4.0);
+	cameraPos = lightPos;
 }
 
 MyLevel::~MyLevel()
@@ -223,6 +234,7 @@ void MyLevel::Update(long time)
 	if(tick_num > 10)
 	{
 		const float cameraSpeed = 0.005f * tick_num; // adjust accordingly
+		
 		if (keys[0])
 			cameraPos += cameraSpeed * cameraFront;
 		if (keys[1])
@@ -231,36 +243,91 @@ void MyLevel::Update(long time)
 			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		if (keys[3])
 			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
+		
+		lightPos = glm::rotate(glm::translate(glm::mat4(1), glm::vec3(1.0,0.0,1.0)), cameraSpeed, glm::vec3(0.0,1.0,0.0)) * glm::vec4(lightPos, 1.0);
 		angle = 0.01;
 		tick_num = 0;
 		for(int i=0;i<3;i++)
 		{
-			m_vec[i] = glm::rotate(glm::mat4(1), angle, glm::vec3(0.0,1.0,0.0) ) * m_vec[i];
+			m_vec[i] = glm::rotate(glm::mat4(1.0), angle, glm::vec3(0.0,1.0,0.0) ) * m_vec[i];
 		}
-		cube.VectorSetup(m_vec,3);
+		cube.VectorSetup(m_vec,4);
 	
 	}
 }
 
 void MyLevel::Render()
 {
-	RenderFlatBG();
-
+	float near_plane = 0.1f, far_plane = 100.0f;
+	glm::mat4 lightProjection = glm::perspective(glm::radians(90.0f), 1.0f, near_plane, far_plane);
+	//glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+	//glm::perspective(glm::radians(90.0f), 1.0f, near_plane, far_plane);
 	
+	// glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0), glm::vec3(0.0,1.0, 0.0));
+	std::vector<glm::mat4> shadowTransforms;
+	shadowTransforms.clear();
+	shadowTransforms.push_back(
+					glm::lookAt(lightPos, lightPos + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+	shadowTransforms.push_back(
+					glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+	shadowTransforms.push_back(
+					glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+	shadowTransforms.push_back(
+					glm::lookAt(lightPos, lightPos + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0)));
+	shadowTransforms.push_back(
+					glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
+	shadowTransforms.push_back(
+					glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
+					
+	m_surface.Bind();
+	cube_shader_to_texture.use();
+	for(unsigned int i = 0; i < 6; i++)
+	{
+		m_surface.SetFace(i);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
-	//cameraPos.y += 0.01;
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)Controller::GetW() / Controller::GetH(), 0.1f, 100.0f);
+		cube_shader_to_texture.setFloat("far_plane", far_plane);
+		cube_shader_to_texture.setFloat3("viewPos", lightPos);
+		cube_shader_to_texture.setMatrixF4("projection",lightProjection);
+		cube_shader_to_texture.setMatrixF4("view", shadowTransforms[i]);
+		cube_shader_to_texture.setFloat3("light_pos", lightPos);
+		//cube_shader_to_texture.setFloat("ambientStrength", 0.2f);
+		
+		cube.DrawInst(cube_shader_to_texture, 4);
+
+	}
+	m_surface.Unbind();
+
+	//m_surface.AllFaces();
+	glViewport(0,0,Controller::GetW(),Controller::GetH()); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	RenderFlatBG();
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)Controller::GetW() / Controller::GetH(), near_plane, far_plane);
 
 	glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 	cube_shader.use();
+	wall.Activate(GL_TEXTURE0);
+	m_surface.getTexture().ActivateCube(GL_TEXTURE1);
+	cube_shader.setInt("ma_texture", 0);
+	cube_shader.setInt("depthMap", 1);
 	cube_shader.setFloat3("viewPos", cameraPos);
 	cube_shader.setMatrixF4("projection", projection);
 	cube_shader.setMatrixF4("view", view);
-	cube_shader.setFloat3("light_pos", cameraUp + cameraPos);
+	cube_shader.setFloat3("light_pos", lightPos);
 	cube_shader.setFloat("ambientStrength", 0.2f);
+	cube_shader.setFloat("far_plane", far_plane);
+	try
+	{
+		cube.DrawInst(cube_shader, 4);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 	
-	cube.DrawInst(cube_shader, 3);
+
+	//cameraPos.y += 0.01;
+	
 }
 
 void MyLevel::RenderFlatBG()
@@ -268,7 +335,7 @@ void MyLevel::RenderFlatBG()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	Shader::unuse();
 	glDepthMask(GL_FALSE);  
-	glColor3f(0.5f, 0.5f, 0.5f);
+	glColor3f(0.3f, 0.5f, 0.1f);
 	glBegin(GL_TRIANGLES);
 		glVertex3f(-1.0, -1.0, 0.0);
 		glVertex3f(-1.0, 1.0, 0.0);

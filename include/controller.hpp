@@ -36,11 +36,13 @@ public:
 class Controller
 {
 public:
+	static void HideCursor();
 	static void ToggleFS();
 	static void Stop();
 	static void Tick();
 	static void Update();
 	static void Render();
+	static void Resize(int new_x, int new_y);
 	static void Keyboard(unsigned char key, int x, int y);
 	static void SpKeyboard(int key, int x, int y);
 	static void SpKeyboardUp(int key, int x, int y);
@@ -51,6 +53,7 @@ public:
 	static void Release();
 	static void StartUp(int argc, char *argv[],const char *name = "Controller Window", unsigned int displaymode = GLUT_DOUBLE ,int width = 500, int height = 500, int x = 200, int y = 200);
 	static void Go() {glutMainLoop();}
+	static void Cleanup();
 	static inline int GetH() { return h_; }
 	static inline int GetW() { return w_; }
 private:

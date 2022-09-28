@@ -14,6 +14,7 @@ public:
 
 	// constructor reads and builds the shader
 	Shader(const char* vertexPath, const char* fragmentPath);
+	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath);
 	// use/activate the shader
 	void use();
 	static void unuse();
@@ -31,6 +32,9 @@ public:
 protected:
 	void Premake(const char* vertexPath, const char* fragmentPath, unsigned int &vertex, unsigned int &fragment);
 	void Link(unsigned int &vertex, unsigned int &fragment);
+	void Link(const std::string &files = "");
+
+	void Premake(const char* shader_path, unsigned int &shader_id, GLenum shader_type);
 	Shader() {}
 private:
 	Shader(const Shader& other) {}
@@ -42,6 +46,7 @@ class ShaderVBO : public Shader
 {
 public:
 	ShaderVBO(const char* vertexPath, const char* fragmentPath);
+	ShaderVBO(const char* vertexPath, const char* fragmentPath, const char* geometryPath);
 	int BindBuffer(void *buffer, size_t total_size, size_t line_size, std::vector<size_t> elements_in_segment, GLenum usage);
 	void DrawBoundArray(GLenum mode, GLint first);
 	void DrawBoundArrayInst(GLenum mode, GLint first, size_t instances);

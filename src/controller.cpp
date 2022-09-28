@@ -68,7 +68,7 @@ void Controller::Tick()
 
 void Controller::Stop()
 {
-	glutExit();
+	glutLeaveMainLoop();
 }
 
 void Controller::ToggleFS()
@@ -97,10 +97,26 @@ void Controller::StartUp(int argc, char *argv[], const char *name, unsigned int 
 	glutMouseFunc(Mouse);
 	glutPassiveMotionFunc(MouseMove);
 	glutMotionFunc(MouseMove);
+	glutReshapeFunc(Resize);
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 	glutCloseFunc(Release);
 	struct timeval time_now{};
 	gettimeofday(&time_now, nullptr);
 	last_time = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
 }
+void Controller::Cleanup()
+{
+	//Release();
+}
+
+void Controller::HideCursor()
+{
+	glutSetCursor(GLUT_CURSOR_NONE);
+}
+void Controller::Resize(int new_x, int new_y)
+{
+	w_ = new_x;
+	h_ = new_y;
+}
+
 }

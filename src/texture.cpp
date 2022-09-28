@@ -11,6 +11,7 @@ int memcpy_s(void *dest, size_t destsz, const void *src, size_t count );
 namespace dimanari
 {
 Texture::Texture(const char *path, bool flip_y)
+	//: target(GL_TEXTURE_2D)
 {
 	unsigned char header[54];
 	unsigned int dataPos;
@@ -111,8 +112,101 @@ void Texture::VerifyBMP(unsigned char *header, FILE* file)
 	}
 }
 
-Texture::Texture() : m_h(0), m_w(0), m_texture(0)
+Texture::Texture() : m_h(0), m_w(0), m_texture(0)//, target(GL_TEXTURE_2D)
 {}
+
+
+void Texture::SetTexture(int texture)
+{
+	if(0 != m_texture)
+	{
+		throw;
+	}
+	m_texture = texture;
+}
+void Texture::SetDimensions(unsigned int w_,unsigned int h_)
+{
+	if(0 != m_texture)
+	{
+		throw;
+	}
+	m_w = w_;
+	m_h = h_;
+}
+
+
+int ShadowTexture::MakeTexture(unsigned int w_,unsigned int h_)
+{
+	if(0 != Data())
+		return -1;
+	SetDimensions(w_, h_);
+	GLuint renderedTexture;
+	glGenTextures(1, &renderedTexture);
+	SetTexture(renderedTexture);
+	Activate(GL_TEXTURE0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w_, h_, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	GLenum success = glGetError();
+	throw_error("glTexImage2D", success);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	return 0;
+}
+
+int ShadowTexture::MakeDepthTexture(unsigned int w_, unsigned int h_)
+{
+	GLenum success;
+	if(0 != Data())
+		return -1;
+	SetDimensions(w_, h_);
+	GLuint renderedTexture;
+	glGenTextures(1, &renderedTexture);
+	SetTexture(renderedTexture);
+	Activate(GL_TEXTURE0);
+	success = glGetError();
+	throw_error("ActivateCube", success);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w_, h_, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+	success = glGetError();
+	throw_error("glTexImage2D", success);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	return 0;
+}
+
+
+int ShadowTexture::MakeCubeTexture(unsigned int w_, unsigned int h_)
+{
+	GLenum success;
+	if(0 != Data())
+		return -1;
+	SetDimensions(w_, h_);
+	GLuint renderedTexture;
+	glGenTextures(1, &renderedTexture);
+	throw_error("glGenTextures", glGetError());
+	SetTexture(renderedTexture);
+	// target = GL_TEXTURE_CUBE_MAP;
+	BindCube();
+	for (unsigned int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, w_, h_, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	success = glGetError();
+	throw_error("ActivateCube", success);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);
+	return 0;
+}
 
 }
 #ifndef __STDC_LIB_EXT1__

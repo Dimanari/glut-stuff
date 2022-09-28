@@ -5,6 +5,7 @@
 #include "texture.hpp"
 #include "model.hpp"
 #include "framebuf.hpp"
+#include "surface.hpp"
 
 namespace dimanari_user
 {
@@ -14,8 +15,12 @@ using dimanari::Shader;
 using dimanari::ShaderVBO;
 using dimanari::Texture;
 using dimanari::SimpleMesh;
-using dimanari::DepthMap;
 using dimanari::ShadowTexture;
+using dimanari::FrameBuf;
+using dimanari::RenderBuf;
+using dimanari::Surface;
+using dimanari::DepthSurface;
+using dimanari::DepthCubeSurface;
 
 struct Point3D
 {
@@ -47,13 +52,17 @@ public:
 private:
 	void RenderFlatBG();
 	Texture wall;
+	Shader show_me;
 	ShaderVBO cube_shader;
+	ShaderVBO cube_shader_to_texture;
 	SimpleMesh cube;
+	DepthCubeSurface m_surface;
 	float yaw;
 	float pitch;
 	glm::vec3 cameraPos;
 	glm::vec3 cameraFront;
 	glm::vec3 cameraUp;
+	glm::vec3 lightPos;
 	bool use_mouse;
 	long tick_num;
 	bool keys[4];

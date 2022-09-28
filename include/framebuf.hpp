@@ -29,16 +29,5 @@ public:
 private:
 	unsigned int rbo;
 };
-
-class DepthMap
-{
-public:
-	DepthMap(GLsizei width, GLsizei height, ShadowTexture &depth_map, void (*ShadowRender)());
-	~DepthMap();
-private:
-	DepthMap(const DepthMap&) = delete;
-	DepthMap& operator=(const DepthMap&) = delete;
-	FrameBuf depth_buffer;
-};
 }
 #endif //!DIMA_PROJ_FRAMEBUF_HPP

@@ -20,6 +20,75 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 	Link(vertex, fragment);
 }
 
+Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
+{
+	throw_error("before shader", glGetError());
+	unsigned int vertex;
+	unsigned int fragment;
+	unsigned int geometry;
+
+	Premake(vertexPath, vertex, GL_VERTEX_SHADER);
+	Premake(geometryPath, geometry, GL_GEOMETRY_SHADER);
+	Premake(fragmentPath, fragment, GL_FRAGMENT_SHADER);
+    throw_error("After Premakes", glGetError());
+
+
+	ID = glCreateProgram();
+	glAttachShader(ID, vertex);
+	glAttachShader(ID, geometry);
+	glAttachShader(ID, fragment);
+    throw_error("After CreateProgram", glGetError());
+
+	Link(vertexPath);
+	glDeleteShader(vertex);
+	glDeleteShader(geometry);
+	glDeleteShader(fragment);
+}
+
+void Shader::Premake(const char* shader_path, unsigned int &shader_id, GLenum shader_type)
+{
+	std::string shaderCode;
+	std::ifstream ShaderFile;
+
+
+	ShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	try 
+	{
+		// open files
+		ShaderFile.open(shader_path);
+		std::stringstream ShaderStream;
+		// read file's buffer contents into streams
+		ShaderStream << ShaderFile.rdbuf();
+		// close file handlers
+		ShaderFile.close();
+		// convert stream into string
+		shaderCode = ShaderStream.str();
+	}
+	catch(std::ifstream::failure& e)
+	{
+		std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ " << shader_path << std::endl;
+		std::cerr << e.what() << std::endl;
+	}
+	const char* ShaderCode = shaderCode.c_str();
+
+	int success;
+	char infoLog[512];
+	
+	// vertex Shader
+	shader_id = glCreateShader(shader_type);
+    throw_error("glCreateShader type:" + std::to_string(shader_type), glGetError());
+	glShaderSource(shader_id, 1, &ShaderCode, NULL);
+
+	glCompileShader(shader_id);
+	// print compile errors if any
+	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
+	if(!success)
+	{
+		glGetShaderInfoLog(shader_id, 512, NULL, infoLog);
+		std::cerr << "ERROR::SHADER::CUSTOM::COMPILATION_FAILED " << shader_path <<"\n" << infoLog << std::endl;
+	};
+}
+
 void Shader::Premake(const char* vertexPath, const char* fragmentPath, unsigned int &vertex, unsigned int &fragment)
 {
 	// 1. retrieve the vertex/fragment source code from filePath
@@ -50,6 +119,7 @@ void Shader::Premake(const char* vertexPath, const char* fragmentPath, unsigned 
 	catch(std::ifstream::failure& e)
 	{
 		std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ " << vertexPath << " or " << fragmentPath << std::endl;
+		std::cerr << e.what() << std::endl;
 	}
 	const char* vShaderCode = vertexCode.c_str();
 	const char* fShaderCode = fragmentCode.c_str();
@@ -91,6 +161,14 @@ void Shader::Premake(const char* vertexPath, const char* fragmentPath, unsigned 
 
 void Shader::Link(unsigned int &vertex, unsigned int &fragment)
 {
+	Link();
+	// delete the shaders as they're linked into our program now and no longer necessary
+	glDeleteShader(vertex);
+	glDeleteShader(fragment);
+}
+
+void Shader::Link(const std::string &files)
+{
 	int success;
 	char infoLog[512];
 	glLinkProgram(ID);
@@ -99,15 +177,10 @@ void Shader::Link(unsigned int &vertex, unsigned int &fragment)
 	if(!success)
 	{
 		glGetProgramInfoLog(ID, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED" << ((files.size()) ? ("\nin " + files) : ("")) << "\n" << infoLog << std::endl;
 	}
 
-	// delete the shaders as they're linked into our program now and no longer necessary
-	glDeleteShader(vertex);
-	glDeleteShader(fragment);
 }
-
-
 // use/activate the shader
 void Shader::use()
 {
@@ -163,17 +236,19 @@ Shader::~Shader()
 }
 
 ShaderVBO::ShaderVBO(const char* vertexPath, const char* fragmentPath)
+	: Shader(vertexPath, fragmentPath)
 {
-	unsigned int vertex;
-	unsigned int fragment;
-
-	Premake(vertexPath, fragmentPath, vertex, fragment);
-
-	Link(vertex, fragment);
-
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 }
+
+ShaderVBO::ShaderVBO(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
+	: Shader(vertexPath, fragmentPath, geometryPath)
+{
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+}
+
 ShaderVBO::~ShaderVBO()
 {
 	glDeleteBuffers(1, &VBO);
