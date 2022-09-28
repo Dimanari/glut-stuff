@@ -6,6 +6,7 @@ out vec4 FragColor;
 in vec3 Normal;
 in vec2 TexCoord;
 in vec3 FragPos;
+in vec4 FragPosLightSpace;
 
 uniform vec3 light_pos;
 uniform vec3 viewPos;
@@ -83,7 +84,7 @@ void main()
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
 	vec3 specular = specularStrength * spec * lightColor;
 
-	float shadow = 0.0; //ShadowCalculation2(FragPosLightSpace, lightDir);       
+	float shadow = ShadowCalculation2(FragPosLightSpace, lightDir);       
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular));
 
 	vec3 result = lighting;
